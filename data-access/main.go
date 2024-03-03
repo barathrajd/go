@@ -46,11 +46,22 @@ func main() {
 	}
 	fmt.Printf("Albums found: %v\n", albums)
 
-	album, err := albumById(0)
+	album, err := albumById(1)
 	if err != nil {
 		log.Fatal(err)
 	}
 	fmt.Printf("Albums found: %v\n", album)
+
+	albID, err := addAlbum(Album{
+		Title:  "The Modern Sound of Betty Carter",
+		Artist: "Betty Carter",
+		Price:  49.99,
+	})
+
+	if err != nil {
+		log.Fatal(err)
+	}
+	fmt.Printf("ID of added album: %v\n", albID)
 
 }
 
@@ -78,9 +89,7 @@ func albumsByArtist(name string) ([]Album, error) {
 
 func albumById(id int) (Album, error) {
 	var album Album
-
 	row := db.QueryRow("SELECT * FROM album WHERE id = ?", id)
-
 	if err := row.Scan(&album.ID, &album.Title, &album.Artist, &album.Price); err != nil {
 		if err == sql.ErrNoRows {
 			return album, fmt.Errorf("albumsById %d: no such album", id)
@@ -88,5 +97,18 @@ func albumById(id int) (Album, error) {
 		return album, fmt.Errorf("albumById %d: %v", id, err)
 	}
 	return album, nil
+
+}
+
+func addAlbum(album Album) (int64, error) {
+	result, err := db.Exec("INSERT INTO album (title, artist, price) VALUES (?, ?, ?)", album.Title, album.Artist, album.Price)
+	if err != nil {
+		return 0, fmt.Errorf("addAlbum: %v", err)
+	}
+	id, err := result.LastInsertId()
+	if err != nil {
+		return 0, fmt.Errorf("addAlbum: %v", err)
+	}
+	return id, nil
 
 }
